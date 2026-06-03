@@ -4,9 +4,7 @@ const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
-];
+];  // Icons embedded as data URIs in index.html
 
 self.addEventListener('install', e => {
   e.waitUntil(
