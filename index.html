@@ -8,7 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Resonance"/>
 <title>Resonance</title>
-<link rel="manifest" href="manifest.json"/>
+<link rel="manifest" href="./manifest.json"/>
+<link rel="apple-touch-icon" href="./icon-192.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png"/>
 <style>
 /* ═══════════════════════════════════════════════════════
    RESONANCE v2 — FULLY OFFLINE · SYSTEM FONTS ONLY
@@ -976,9 +978,15 @@ select.speed-sel { background: var(--bg-raise); border: 1px solid var(--border-s
       <button class="modal-close" id="iosInstallClose">✕</button>
     </div>
     <div class="modal-body">
-      <div class="ios-step"><div class="ios-step-num">1</div><div class="ios-step-text">Tap the <strong>Share button</strong> (□↑) at the bottom of Safari</div></div>
-      <div class="ios-step"><div class="ios-step-num">2</div><div class="ios-step-text">Scroll down and tap <strong>"Add to Home Screen"</strong></div></div>
-      <div class="ios-step"><div class="ios-step-num">3</div><div class="ios-step-text">Tap <strong>Add</strong> in the top right corner</div></div>
+      <p style="font-size:13px;color:var(--text-dim)">Add Resonance to your Home Screen for full offline access and no browser bar.</p>
+      <div style="margin-top:8px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">iPhone / iPad (Safari)</div>
+      <div class="ios-step"><div class="ios-step-num">1</div><div class="ios-step-text">Make sure you're in <strong>Safari</strong> — this won't work in Chrome or Firefox</div></div>
+      <div class="ios-step"><div class="ios-step-num">2</div><div class="ios-step-text">Tap the <strong>Share icon</strong> <span style="font-size:17px;vertical-align:middle">□↑</span> in the toolbar (bottom on iPhone, top on iPad)</div></div>
+      <div class="ios-step"><div class="ios-step-num">3</div><div class="ios-step-text">Scroll down and tap <strong>"Add to Home Screen"</strong></div></div>
+      <div class="ios-step"><div class="ios-step-num">4</div><div class="ios-step-text">Tap <strong>Add</strong> — Resonance appears on your Home Screen</div></div>
+      <div style="margin-top:12px;padding:10px;background:var(--bg-raise);border-radius:var(--radius-sm);font-size:12px;color:var(--text-dim)">
+        <strong style="color:var(--text-main)">Android / Chrome:</strong> Tap ⋮ menu → "Add to Home screen" or "Install app". If you don't see it, Chrome may show an install icon in the address bar.
+      </div>
     </div>
   </div>
 </div>
@@ -2005,15 +2013,30 @@ document.getElementById('iosInstallOverlay').addEventListener('click',e=>{if(e.t
 
 let deferredInstallPrompt=null;
 const installBanner=document.getElementById('install-banner');
-const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
-const isStandalone=window.matchMedia('(display-mode:standalone)').matches||navigator.standalone;
+// iPad Pro in desktop mode reports MacIntel with touch points
+const isIOS=(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream)||
+            (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const isStandalone=window.matchMedia('(display-mode:standalone)').matches||navigator.standalone===true;
 const dismissedKey='resonance_install_dismissed';
 
-function showInstallBanner(){if(isStandalone)return;if(localStorage.getItem(dismissedKey))return;setTimeout(()=>installBanner.classList.add('show'),2500);}
+function showInstallBanner(){
+  if(isStandalone)return;
+  if(localStorage.getItem(dismissedKey))return;
+  setTimeout(()=>installBanner.classList.add('show'),2500);
+}
 function triggerInstall(){
-  if(deferredInstallPrompt){deferredInstallPrompt.prompt();deferredInstallPrompt.userChoice.then(r=>{if(r.outcome==='accepted'){toast('✅ Resonance installed!');installBanner.classList.remove('show');}deferredInstallPrompt=null;});}
-  else if(isIOS){document.getElementById('iosInstallOverlay').classList.add('open');}
-  else{toast('Open in Chrome or Edge to install');}
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(r=>{
+      if(r.outcome==='accepted'){toast('✅ Resonance installed!');installBanner.classList.remove('show');}
+      deferredInstallPrompt=null;
+    });
+  } else if(isIOS){
+    document.getElementById('iosInstallOverlay').classList.add('open');
+  } else {
+    // Show iOS instructions as fallback for any other browser without prompt
+    document.getElementById('iosInstallOverlay').classList.add('open');
+  }
 }
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;showInstallBanner();});
 window.addEventListener('appinstalled',()=>{installBanner.classList.remove('show');toast('✅ Installed!');deferredInstallPrompt=null;});
@@ -2024,7 +2047,11 @@ if(isIOS&&!isStandalone)showInstallBanner();
 // ── SERVICE WORKER ─────────────────────────────────────────────────────────────
 
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').then(()=>{}).catch(()=>{});
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    console.log('SW registered, scope:', reg.scope);
+  }).catch(err => {
+    console.warn('SW registration failed:', err);
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
